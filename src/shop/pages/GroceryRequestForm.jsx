@@ -1,0 +1,275 @@
+import React, { useState } from "react";
+import API from "../../api/axios";
+
+import "./GroceryRequestForm.css";
+
+const GroceryRequestForm = () => {
+  const [formData, setFormData] = useState({
+    items_text: "",
+    budget: "",
+    urgency: "2_hours",
+    phone_number: "",
+    new_address: "",
+    latitude: "",
+    longitude: "",
+    address_text: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [addressMode, setAddressMode] = useState("new");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+
+          const data = await response.json();
+
+          setFormData((prev) => ({
+            ...prev,
+            latitude,
+            longitude,
+            address_text: data.display_name || "Address unavailable for this location.",
+          }));
+        } catch (error) {
+          console.error("Error fetching address:", error);
+          setFormData((prev) => ({
+            ...prev,
+            latitude,
+            longitude,
+            address_text: "Address unavailable for this location.",
+          }));
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        alert("Unable to retrieve location.");
+        console.error(error);
+        setIsLocating(false);
+      }
+    );
+  };
+
+  const handleUseCurrentLocation = () => {
+    setAddressMode("current");
+    handleGetLocation();
+  };
+
+  const geocodeAddress = async (address) => {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to geocode address.");
+    }
+
+    const results = await response.json();
+
+    if (!results.length) {
+      alert("No coordinates found for this address.")
+      throw new Error("No coordinates found for this address.");
+    }
+
+    return {
+      latitude: parseFloat(results[0].lat),
+      longitude: parseFloat(results[0].lon),
+    };
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        items_text: formData.items_text,
+        budget: formData.budget,
+        urgency: formData.urgency,
+        phone_number: formData.phone_number,
+      };
+
+      if (addressMode === "new") {
+        const coords = await geocodeAddress(formData.new_address);
+        payload.address_text = formData.new_address;
+        payload.latitude = coords.latitude;
+        payload.longitude = coords.longitude;
+      }
+
+      if (addressMode === "current") {
+        payload.latitude = formData.latitude;
+        payload.longitude = formData.longitude;
+        payload.address_text = formData.address_text;
+      }
+
+      // await axios.post("/orders/create/", payload);
+
+      await API.post("/orders/create/", payload);
+
+      
+      alert("Request Dispatched Successfully");
+      setFormData({
+        items_text: "",
+        budget: "",
+        urgency: "2_hours",
+        phone_number: "",
+        new_address: "",
+        latitude: "",
+        longitude: "",
+        address_text: "",
+      });
+      setAddressMode("new");
+    } catch (err) {
+      console.error("Order submission failed:", err?.response?.data || err.message || err);
+      alert("Submission error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="focused-page-wrapper">
+      <div className="professional-card">
+        <header className="form-header">
+          <div className="brand-meta">System Dispatch</div>
+          <h1>Grocery Request</h1>
+          <p>Complete the manifest below to initiate local delivery protocol.</p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="professional-form">
+          <div className="input-block">
+            <label>Manifest Details</label>
+            <textarea
+              name="items_text"
+              placeholder="List all required items here..."
+              value={formData.items_text}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="logistics-grid">
+            <div className="input-block">
+              <label>Max Budget ($)</label>
+              <input
+                type="number"
+                name="budget"
+                placeholder="0.00"
+                value={formData.budget}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="input-block">
+              <label>Delivery Window</label>
+              <select name="urgency" value={formData.urgency} onChange={handleChange}>
+                <option value="2_hours">Standard (2 Hours)</option>
+                <option value="1_hour">Priority (1 Hour)</option>
+                <option value="30_mins">Flash (30 Minutes)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="input-block">
+            <label>Phone Number</label>
+            <input
+              type="tel"
+              name="phone_number"
+              placeholder="Enter your phone number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="input-block">
+            <label>Delivery Address</label>
+            <div className="address-mode-tabs">
+              <button
+                type="button"
+                className={`address-mode-tab ${addressMode === "new" ? "active" : ""}`}
+                onClick={() => setAddressMode("new")}
+              >
+                Add New Address
+              </button>
+              <button
+                type="button"
+                className={`address-mode-tab ${addressMode === "current" ? "active" : ""}`}
+                onClick={handleUseCurrentLocation}
+              >
+                Use Current Location
+              </button>
+            </div>
+            <div className="address-panel">
+              {addressMode === "new" && (
+                <textarea
+                  name="new_address"
+                  placeholder="Enter full delivery address"
+                  value={formData.new_address}
+                  onChange={handleChange}
+                  required
+                />
+              )}
+
+              {addressMode === "current" && (
+                <div className="location-card">
+                  <p className={`location-helper ${isLocating ? "loading" : ""}`}>
+                    {isLocating
+                      ? "Detecting your current location..."
+                      : "Detected address can be edited before submit."}
+                  </p>
+
+                  <div className="location-preview">
+                    <p className="location-preview-title">Detected Address</p>
+                    <textarea
+                      name="address_text"
+                      placeholder="Detected address will appear here. You can edit it."
+                      value={formData.address_text}
+                      onChange={handleChange}
+                      required
+                    />
+                    {!isLocating && !formData.address_text && (
+                      <p className="location-empty">Waiting for location permission...</p>
+                    )}
+                    {formData.latitude && formData.longitude && (
+                      <p className="location-coords">
+                        Lat: {formData.latitude} | Lng: {formData.longitude}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-footer">
+            <button type="submit" className="submit-action-btn" disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Deploy Request"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default GroceryRequestForm;
