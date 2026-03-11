@@ -23,50 +23,124 @@ const GroceryRequestForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // const handleGetLocation = () => {
+  //   if (!navigator.geolocation) {
+  //     alert("Geolocation is not supported by your browser.");
+  //     return;
+  //   }
+
+  //   setIsLocating(true);
+
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (position) => {
+  //       const { latitude, longitude } = position.coords;
+
+  //       try {
+  //         const response = await fetch(
+  //           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+  //         );
+
+  //         const data = await response.json();
+
+  //         setFormData((prev) => ({
+  //           ...prev,
+  //           latitude,
+  //           longitude,
+  //           address_text: data.display_name || "Address unavailable for this location.",
+  //         }));
+  //       } catch (error) {
+  //         console.error("Error fetching address:", error);
+  //         setFormData((prev) => ({
+  //           ...prev,
+  //           latitude,
+  //           longitude,
+  //           address_text: "Address unavailable for this location.",
+  //         }));
+  //       } finally {
+  //         setIsLocating(false);
+  //       }
+  //     },
+  //     (error) => {
+  //       alert("Unable to retrieve location.");
+  //       console.error(error);
+  //       setIsLocating(false);
+  //     }
+  //   );
+  // };
+
+
+
   const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
 
-    setIsLocating(true);
+  setIsLocating(true);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude, accuracy } = position.coords;
 
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
+      console.log("Latitude:", latitude);
+      console.log("Longitude:", longitude);
+      console.log("Accuracy:", accuracy, "meters");
 
-          const data = await response.json();
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+        );
 
-          setFormData((prev) => ({
-            ...prev,
-            latitude,
-            longitude,
-            address_text: data.display_name || "Address unavailable for this location.",
-          }));
-        } catch (error) {
-          console.error("Error fetching address:", error);
-          setFormData((prev) => ({
-            ...prev,
-            latitude,
-            longitude,
-            address_text: "Address unavailable for this location.",
-          }));
-        } finally {
-          setIsLocating(false);
-        }
-      },
-      (error) => {
-        alert("Unable to retrieve location.");
-        console.error(error);
+        const data = await response.json();
+
+        setFormData((prev) => ({
+          ...prev,
+          latitude: latitude,
+          longitude: longitude,
+          address_text:
+            data.display_name || "Address unavailable for this location.",
+        }));
+      } catch (error) {
+        console.error("Error fetching address:", error);
+
+        setFormData((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+          address_text: "Address unavailable for this location.",
+        }));
+      } finally {
         setIsLocating(false);
       }
-    );
-  };
+    },
+
+    (error) => {
+      console.error("Geolocation error:", error);
+
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          alert("Location permission denied.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert("Location information unavailable.");
+          break;
+        case error.TIMEOUT:
+          alert("Location request timed out.");
+          break;
+        default:
+          alert("An unknown error occurred.");
+      }
+
+      setIsLocating(false);
+    },
+
+    {
+      enableHighAccuracy: true, // IMPORTANT
+      timeout: 15000,           // wait up to 15s
+      maximumAge: 0             // do not use cached location
+    }
+  );
+};
 
   const handleUseCurrentLocation = () => {
     setAddressMode("current");

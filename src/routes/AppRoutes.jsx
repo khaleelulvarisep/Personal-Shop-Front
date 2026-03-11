@@ -8,7 +8,7 @@ import Orders from "../shop/pages/Orders";
 import About from "../shop/pages/About";
 import Contact from "../shop/pages/Contact";
 import GroceryRequestForm from "../shop/pages/GroceryRequestForm";
-
+import TrackOrder from "../shop/pages/TrackOrder";
 const isAuthenticated = () => {
   return Boolean(localStorage.getItem("access_token"));
 };
@@ -35,6 +35,7 @@ function AppRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/order" element={<GroceryRequestForm />} />
+        <Route path="/map" element={<TrackOrder />} />
 
       </Route>
 
