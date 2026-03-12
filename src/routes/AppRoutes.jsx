@@ -35,8 +35,7 @@ function AppRoutes() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/order" element={<GroceryRequestForm />} />
-        <Route path="/map" element={<TrackOrder />} />
-
+       <Route path="/track/:orderId" element={<TrackOrder />} />
       </Route>
 
       <Route

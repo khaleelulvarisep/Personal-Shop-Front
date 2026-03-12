@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState} from "react";
 import API from "../../api/axios";
 import "./Orders.css";
-
+import { useNavigate } from "react-router-dom";
 const MyOrders = () => {
-
+  const navigate=useNavigate()
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +75,9 @@ const MyOrders = () => {
                   Created: {new Date(order.created_at).toLocaleString()}
                 </small>
               </div>
+              <button onClick={() => navigate(`/track/${order.id}`)}>
+                  Track Order
+            </button>
 
             </div>
           ))}
