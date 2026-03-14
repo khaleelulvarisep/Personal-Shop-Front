@@ -1,18 +1,22 @@
 import LiveDriverMap from "../../shared/components/LiveDriverMap";
 import { useParams } from "react-router-dom";
+import "./TrackOrder.css";
 
 export default function TrackOrder() {
 
-  const { orderId } = useParams();
-
+  const { driverId  } = useParams();
+  const parsedDriverId = Number(driverId);
   return (
 
-    <div>
+    <div className="trackOrderPage">
+      <div className="trackOrderCard">
+        <div className="trackOrderHeader">
+          <h2 className="trackOrderTitle">Track your delivery</h2>
+          <div className="trackOrderSub">Live location updates from your delivery partner</div>
+        </div>
 
-      <h2>Track your delivery</h2>
-
-      <LiveDriverMap orderId={orderId} />
-
+        <LiveDriverMap driverId={parsedDriverId} />
+      </div>
     </div>
 
   );

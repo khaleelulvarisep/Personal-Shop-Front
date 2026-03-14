@@ -1,0 +1,171 @@
+.liveDriverMap {
+  width: 100%;
+}
+
+.liveDriverMap__frame {
+  position: relative;
+  height: 520px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f6f8ff, #eef2ff);
+  box-shadow: 0 10px 30px rgba(12, 22, 54, 0.14);
+  border: 1px solid rgba(20, 24, 40, 0.08);
+}
+
+.liveDriverMap__map {
+  height: 100%;
+  width: 100%;
+}
+
+.liveDriverMap__skeleton {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  color: #111827;
+  text-align: center;
+  background:
+    radial-gradient(1200px 400px at 30% 0%, rgba(99, 102, 241, 0.16), transparent 65%),
+    radial-gradient(900px 320px at 80% 20%, rgba(16, 185, 129, 0.12), transparent 60%),
+    linear-gradient(180deg, #f6f8ff, #eef2ff);
+}
+
+.liveDriverMap__skeletonTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.liveDriverMap__skeletonSub {
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.65);
+}
+
+.liveDriverMap__overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.liveDriverMap__topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.liveDriverMap__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(20, 24, 40, 0.12);
+  pointer-events: auto;
+}
+
+.liveDriverMap__statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.18);
+}
+
+.liveDriverMap__status--connected .liveDriverMap__statusDot {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+}
+
+.liveDriverMap__status--connecting .liveDriverMap__statusDot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
+}
+
+.liveDriverMap__status--disconnected .liveDriverMap__statusDot,
+.liveDriverMap__status--error .liveDriverMap__statusDot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22);
+}
+
+.liveDriverMap__meta {
+  padding: 8px 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(20, 24, 40, 0.12);
+  pointer-events: auto;
+}
+
+.liveDriverMap__metaLabel {
+  font-size: 10px;
+  color: rgba(17, 24, 39, 0.6);
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.liveDriverMap__metaValue {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.liveDriverMap__actions {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.liveDriverMap__btn {
+  border: 1px solid rgba(20, 24, 40, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  color: #111827;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 140ms ease, background 140ms ease;
+}
+
+.liveDriverMap__btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.liveDriverMap__btn.is-active {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.liveDriverMap__error {
+  pointer-events: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 520px;
+}
+
+.liveDriverMap__popupTitle {
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.liveDriverMap__popupMeta {
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.7);
+}
+

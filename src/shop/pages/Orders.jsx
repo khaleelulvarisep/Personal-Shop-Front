@@ -75,9 +75,18 @@ const MyOrders = () => {
                   Created: {new Date(order.created_at).toLocaleString()}
                 </small>
               </div>
-              <button onClick={() => navigate(`/track/${order.id}`)}>
-                  Track Order
-            </button>
+             <button
+  onClick={() => {
+    if (!order?.delivery_partner) {
+      console.log("Driver not assigned yet");
+      return;
+    }
+
+    navigate(`/track/${order.delivery_partner}`);
+  }}
+>
+  Track Order
+</button>
 
             </div>
           ))}

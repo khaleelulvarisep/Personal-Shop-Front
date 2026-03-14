@@ -1,0 +1,25 @@
+.trackOrderPage {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.trackOrderCard {
+  width: 100%;
+  max-width: 980px;
+}
+
+.trackOrderHeader {
+  margin-bottom: 14px;
+}
+
+.trackOrderTitle {
+  margin: 0 0 6px 0;
+  font-size: 28px;
+}
+
+.trackOrderSub {
+  color: rgba(17, 24, 39, 0.7);
+  font-size: 14px;
+}
+
