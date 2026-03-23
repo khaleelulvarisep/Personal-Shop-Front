@@ -17,7 +17,7 @@ function getWsBaseUrl() {
   const isSecureContext = window.location.protocol === "https:";
   const protocol = isSecureContext ? "wss:" : "ws:";
   const host = window.location.hostname || "localhost";
-  const port = import.meta.env?.VITE_WS_PORT || "8001";
+  const port = import.meta.env?.VITE_WS_PORT || "8000";
   return `${protocol}//${host}:${port}`;
 }
 
