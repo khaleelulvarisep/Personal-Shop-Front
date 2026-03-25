@@ -51,8 +51,10 @@ function Login() {
       if (refresh) {
         localStorage.setItem("refresh_token", refresh);
       }
-
+     
+      localStorage.setItem("user_id", response.data.user.id);
       alert("Login successful!");
+      
       navigate("/home");
     } catch (error) {
       const { fieldErrors: parsedFieldErrors, formError: parsedFormError } =

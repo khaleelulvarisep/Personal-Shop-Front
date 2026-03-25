@@ -9,6 +9,7 @@ import About from "../shop/pages/About";
 import Contact from "../shop/pages/Contact";
 import GroceryRequestForm from "../shop/pages/GroceryRequestForm";
 import TrackOrder from "../shop/pages/TrackOrder";
+import ChatPage from "../shop/pages/ChatPage";
 const isAuthenticated = () => {
   return Boolean(localStorage.getItem("access_token"));
 };
@@ -36,6 +37,8 @@ function AppRoutes() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/order" element={<GroceryRequestForm />} />
        <Route path="/track/:driverId" element={<TrackOrder />} />
+       <Route path="/chat/:orderId" element={<ChatPage/>} />
+
       </Route>
 
       <Route

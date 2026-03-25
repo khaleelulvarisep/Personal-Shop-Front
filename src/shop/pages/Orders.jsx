@@ -290,14 +290,14 @@ const MyOrders = () => {
           <table className="orders-table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Status</th>
-                <th>Items</th>
-                <th>Budget</th>
-                <th>Urgency</th>
-                <th>Contact</th>
-                <th>Created</th>
-                <th>Tracking</th>
+                <th scope="col">Order</th>
+                <th scope="col">Status</th>
+                <th scope="col">Items</th>
+                <th scope="col">Budget</th>
+                <th scope="col">Urgency</th>
+                <th scope="col">Contact</th>
+                <th scope="col">Created</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -343,21 +343,34 @@ const MyOrders = () => {
                         : "-"}
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="orders-track-btn"
-                        onClick={() =>
-                          navigate(`/track/${order.delivery_partner}`)
-                        }
-                        disabled={!trackingAvailable}
-                        title={
-                          trackingAvailable
-                            ? "Track your delivery partner"
-                            : "Tracking becomes available after a driver is assigned"
-                        }
-                      >
-                        Track
-                      </button>
+                      <div className="orders-tracking-actions">
+                        <button
+                          type="button"
+                          className="orders-track-btn"
+                          onClick={() =>
+                            navigate(`/track/${order.delivery_partner}`)
+                          }
+                          disabled={!trackingAvailable}
+                          title={
+                            trackingAvailable
+                              ? "Track your delivery partner"
+                              : "Tracking becomes available after a driver is assigned"
+                          }
+                        >
+                          Track
+                        </button>
+
+                        {normalizeStatus(order?.status) === "accepted" ? (
+                          <button
+                            type="button"
+                            className="orders-chat-btn"
+                            onClick={() => navigate(`/chat/${order?.id}`)}
+                            title="Open chat with your driver"
+                          >
+                            Chat
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 );

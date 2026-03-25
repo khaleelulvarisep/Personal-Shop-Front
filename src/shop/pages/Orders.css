@@ -216,6 +216,42 @@
   cursor: pointer;
 }
 
+.orders-tracking-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.orders-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, #1aa37f 0%, #0f7c61 100%);
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-shadow: 0 10px 22px rgba(15, 124, 97, 0.18);
+}
+
+.orders-chat-btn:hover {
+  box-shadow: 0 12px 24px rgba(15, 124, 97, 0.22);
+}
+
+.orders-chat-btn:active {
+  transform: translateY(1px);
+}
+
+.orders-chat-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .orders-track-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -307,5 +343,13 @@
 
   .orders-filters {
     grid-template-columns: 1fr;
+  }
+
+  .orders-tracking-actions {
+    width: 100%;
+  }
+
+  .orders-tracking-actions button {
+    width: 100%;
   }
 }
