@@ -269,7 +269,7 @@ const MyOrders = () => {
 
       {filteredOrders.length === 0 ? (
         <div className="orders-empty">
-          <div className="orders-empty-title">No orders found</div>
+          <div className="orders-empty-title">No orders found!</div>
           <div className="orders-empty-text">
             {orders.length === 0
               ? "You haven't created any grocery requests yet."
