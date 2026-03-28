@@ -56,10 +56,7 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const fetchOrders = async ({ silent = false } = {}) => {
     try {
@@ -82,71 +79,28 @@ const MyOrders = () => {
     fetchOrders();
   }, []);
 
-  const statusOptions = useMemo(() => {
-    const values = new Set(
-      (orders ?? []).map((o) => normalizeStatus(o?.status)).filter(Boolean)
-    );
-    return ["all", ...Array.from(values).sort()];
-  }, [orders]);
-
-  const orderCounts = useMemo(() => {
-    const counts = {
-      total: 0,
-      pending: 0,
-      processing: 0,
-      delivered: 0,
-      cancelled: 0,
+  useEffect(() => {
+    if (!selectedOrder) return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedOrder(null);
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [selectedOrder]);
 
-    (orders ?? []).forEach((order) => {
-      counts.total += 1;
-      const bucket = statusBadgeClass(order?.status);
-      if (bucket in counts) counts[bucket] += 1;
-    });
-
-    return counts;
-  }, [orders]);
-
-  const filteredOrders = useMemo(() => {
+  const displayOrders = useMemo(() => {
     const safeOrders = Array.isArray(orders) ? orders : [];
-    const q = query.trim().toLowerCase();
-
-    const filtered = safeOrders.filter((order) => {
-      const matchesStatus =
-        statusFilter === "all" ||
-        normalizeStatus(order?.status) === statusFilter;
-      if (!matchesStatus) return false;
-
-      if (!q) return true;
-      const haystack = [
-        order?.items_text,
-        order?.address_text,
-        order?.phone_number,
-        String(order?.id ?? ""),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-
     const getCreatedAt = (order) => {
       const time = new Date(order?.created_at ?? 0).getTime();
       return Number.isFinite(time) ? time : 0;
     };
-
-    const getBudget = (order) => {
-      const numeric = Number(order?.budget);
-      return Number.isFinite(numeric) ? numeric : 0;
-    };
-
-    return [...filtered].sort((a, b) => {
-      if (sortBy === "oldest") return getCreatedAt(a) - getCreatedAt(b);
-      if (sortBy === "budget_asc") return getBudget(a) - getBudget(b);
-      if (sortBy === "budget_desc") return getBudget(b) - getBudget(a);
-      return getCreatedAt(b) - getCreatedAt(a);
-    });
-  }, [orders, query, sortBy, statusFilter]);
+    return [...safeOrders].sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
+  }, [orders]);
 
   if (loading) {
     return (
@@ -165,11 +119,7 @@ const MyOrders = () => {
     <div className="orders-page shop-page">
       <div className="orders-header">
         <div>
-          <div className="shop-badge">Orders</div>
           <h1 className="orders-title">My grocery requests</h1>
-          <p className="orders-subtitle">
-            Search, filter, and track your latest requests.
-          </p>
         </div>
 
         <div className="orders-header-actions">
@@ -197,191 +147,278 @@ const MyOrders = () => {
         </div>
       ) : null}
 
-      <div className="orders-summary" aria-label="Order summary">
-        <div className="orders-summary-card">
-          <div className="orders-summary-label">Total</div>
-          <div className="orders-summary-value">{orderCounts.total}</div>
-        </div>
-        <div className="orders-summary-card">
-          <div className="orders-summary-label">Pending</div>
-          <div className="orders-summary-value">{orderCounts.pending}</div>
-        </div>
-        <div className="orders-summary-card">
-          <div className="orders-summary-label">In progress</div>
-          <div className="orders-summary-value">{orderCounts.processing}</div>
-        </div>
-        <div className="orders-summary-card">
-          <div className="orders-summary-label">Delivered</div>
-          <div className="orders-summary-value">{orderCounts.delivered}</div>
-        </div>
-      </div>
-
-      <div className="orders-filters" aria-label="Order filters">
-        <div className="orders-field orders-field-wide">
-          <label className="orders-label" htmlFor="orders-search">
-            Search
-          </label>
-          <input
-            id="orders-search"
-            className="orders-input"
-            type="search"
-            placeholder="Search by items, address, phone, or order #"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="orders-field">
-          <label className="orders-label" htmlFor="orders-status">
-            Status
-          </label>
-          <select
-            id="orders-status"
-            className="orders-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            {statusOptions.map((value) => (
-              <option key={value} value={value}>
-                {value === "all" ? "All" : value.replace(/-/g, " ")}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="orders-field">
-          <label className="orders-label" htmlFor="orders-sort">
-            Sort
-          </label>
-          <select
-            id="orders-sort"
-            className="orders-select"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="budget_desc">Budget: high to low</option>
-            <option value="budget_asc">Budget: low to high</option>
-          </select>
-        </div>
-      </div>
-
-      {filteredOrders.length === 0 ? (
+      {displayOrders.length === 0 ? (
         <div className="orders-empty">
           <div className="orders-empty-title">No orders found!</div>
           <div className="orders-empty-text">
-            {orders.length === 0
-              ? "You haven't created any grocery requests yet."
-              : "Try adjusting your search or filters."}
+            You haven't created any grocery requests yet.
           </div>
-          {orders.length === 0 ? (
-            <button
-              type="button"
-              className="orders-action-btn orders-primary-btn"
-              onClick={() => navigate("/order")}
-            >
-              Create your first request
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="orders-action-btn orders-primary-btn"
+            onClick={() => navigate("/order")}
+          >
+            Create your first request
+          </button>
         </div>
       ) : (
-        <div className="orders-table-wrap">
-          <table className="orders-table">
-            <thead>
-              <tr>
-                <th scope="col">Order</th>
-                <th scope="col">Status</th>
-                <th scope="col">Items</th>
-                <th scope="col">Budget</th>
-                <th scope="col">Urgency</th>
-                <th scope="col">Contact</th>
-                <th scope="col">Created</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => {
-                const trackingAvailable = Boolean(order?.delivery_partner);
-                return (
-                  <tr key={order?.id}>
-                    <td className="orders-order-cell">
+        <div className="orders-grid-wrap">
+          <div className="orders-grid" role="list">
+            {displayOrders.map((order) => {
+              const trackingAvailable = Boolean(order?.delivery_partner);
+              const chatAvailable = normalizeStatus(order?.status) === "accepted";
+              const createdAt = order?.created_at
+                ? new Date(order.created_at).toLocaleString()
+                : "-";
+              return (
+                <div
+                  key={order?.id}
+                  role="listitem"
+                  className="orders-card"
+                  tabIndex={0}
+                  onClick={() => setSelectedOrder(order)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedOrder(order);
+                    }
+                  }}
+                  aria-label={`Open order ${order?.id ?? ""} details`}
+                >
+                  <div className="orders-card-top">
+                    <div>
                       <div className="orders-order-id">#{order?.id ?? "-"}</div>
+                      <div className="orders-card-created">{createdAt}</div>
+                    </div>
+
+                    <span
+                      className={`order-status-badge ${statusBadgeClass(
+                        order?.status
+                      )}`}
+                      title={String(order?.status ?? "Unknown")}
+                    >
+                      {statusLabel(order?.status)}
+                    </span>
+                  </div>
+
+                  <div className="orders-card-meta">
+                    <div className="orders-card-meta-item">
+                      <div className="orders-card-meta-label">Address</div>
                       <div className="orders-order-address">
                         {order?.address_text ?? "-"}
                       </div>
-                    </td>
-                    <td>
-                      <span
-                        className={`order-status-badge ${statusBadgeClass(
-                          order?.status
-                        )}`}
-                        title={String(order?.status ?? "Unknown")}
-                      >
-                        {statusLabel(order?.status)}
-                      </span>
-                    </td>
-                    <td className="orders-items-cell">
-                      {order?.items_text ?? "-"}
-                    </td>
-                    <td>{formatMoney(order?.budget)}</td>
-                    <td>
+                    </div>
+
+                    <div className="orders-card-meta-item">
+                      <div className="orders-card-meta-label">Items</div>
+                      <div className="orders-items-cell">
+                        {order?.items_text ?? "-"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="orders-card-bottom">
+                    <div className="orders-card-chips">
+                      <div className="orders-chip">
+                        <div className="orders-chip-label">Budget</div>
+                        <div className="orders-chip-value">
+                          {formatMoney(order?.budget)}
+                        </div>
+                      </div>
+
                       <span
                         className={`orders-urgency ${
                           normalizeStatus(order?.urgency) || "default"
                         }`}
+                        title="Urgency"
                       >
                         {order?.urgency ?? "-"}
                       </span>
-                    </td>
-                    <td className="orders-contact-cell">
-                      <div>{order?.phone_number ?? "-"}</div>
-                    </td>
-                    <td>
-                      {order?.created_at
-                        ? new Date(order.created_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td>
-                      <div className="orders-tracking-actions">
-                        <button
-                          type="button"
-                          className="orders-track-btn"
-                          onClick={() =>
-                            navigate(`/track/${order.delivery_partner}`)
-                          }
-                          disabled={!trackingAvailable}
-                          title={
-                            trackingAvailable
-                              ? "Track your delivery partner"
-                              : "Tracking becomes available after a driver is assigned"
-                          }
-                        >
-                          Track
-                        </button>
+                    </div>
 
-                        {normalizeStatus(order?.status) === "accepted" ? (
-                          <button
-                            type="button"
-                            className="orders-chat-btn"
-                            onClick={() => navigate(`/chat/${order?.id}`)}
-                            title="Open chat with your driver"
-                          >
-                            Chat
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="orders-table-footnote">
-            Showing {filteredOrders.length} of {orders.length}
+                    <div className="orders-card-actions">
+                      <button
+                        type="button"
+                        className="orders-track-btn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!trackingAvailable) return;
+                          navigate(`/track/${order.delivery_partner}`);
+                        }}
+                        disabled={!trackingAvailable}
+                        title={
+                          trackingAvailable
+                            ? "Track your delivery partner"
+                            : "Tracking becomes available after a driver is assigned"
+                        }
+                      >
+                        Track
+                      </button>
+
+                      <button
+                        type="button"
+                        className="orders-chat-btn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!chatAvailable) return;
+                          navigate(`/chat/${order?.id}`);
+                        }}
+                        disabled={!chatAvailable}
+                        title={
+                          chatAvailable
+                            ? "Open chat with your driver"
+                            : "Chat becomes available after your order is accepted"
+                        }
+                      >
+                        Chat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
+
+      {selectedOrder ? (
+        <div
+          className="orders-modal-backdrop"
+          role="presentation"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="orders-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Order #${selectedOrder?.id ?? ""} details`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="orders-modal-head">
+              <div>
+                <div className="orders-modal-title">
+                  Order #{selectedOrder?.id ?? "-"}
+                </div>
+                <div className="orders-modal-subtitle">
+                  {selectedOrder?.created_at
+                    ? new Date(selectedOrder.created_at).toLocaleString()
+                    : "-"}
+                </div>
+              </div>
+
+              <div className="orders-modal-head-right">
+                <span
+                  className={`order-status-badge ${statusBadgeClass(
+                    selectedOrder?.status
+                  )}`}
+                  title={String(selectedOrder?.status ?? "Unknown")}
+                >
+                  {statusLabel(selectedOrder?.status)}
+                </span>
+
+                <button
+                  type="button"
+                  className="orders-modal-close"
+                  onClick={() => setSelectedOrder(null)}
+                  aria-label="Close order details"
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="orders-modal-content">
+              <div className="orders-modal-grid">
+                <div className="orders-modal-section">
+                  <div className="orders-modal-section-title">Request</div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Items</div>
+                    <div className="orders-modal-value">
+                      {selectedOrder?.items_text ?? "-"}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Budget</div>
+                    <div className="orders-modal-value">
+                      {formatMoney(selectedOrder?.budget)}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Urgency</div>
+                    <div className="orders-modal-value">
+                      <span
+                        className={`orders-urgency ${
+                          normalizeStatus(selectedOrder?.urgency) || "default"
+                        }`}
+                      >
+                        {selectedOrder?.urgency ?? "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="orders-modal-section">
+                  <div className="orders-modal-section-title">Delivery</div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Address</div>
+                    <div className="orders-modal-value">
+                      {selectedOrder?.address_text ?? "-"}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Phone</div>
+                    <div className="orders-modal-value">
+                      {selectedOrder?.phone_number ?? "-"}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Driver</div>
+                    <div className="orders-modal-value">
+                      {selectedOrder?.delivery_partner
+                        ? `#${selectedOrder.delivery_partner}`
+                        : "-"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="orders-modal-actions">
+                <button
+                  type="button"
+                  className="orders-track-btn"
+                  onClick={() =>
+                    selectedOrder?.delivery_partner
+                      ? navigate(`/track/${selectedOrder.delivery_partner}`)
+                      : null
+                  }
+                  disabled={!selectedOrder?.delivery_partner}
+                  title={
+                    selectedOrder?.delivery_partner
+                      ? "Track your delivery partner"
+                      : "Tracking becomes available after a driver is assigned"
+                  }
+                >
+                  Track
+                </button>
+                <button
+                  type="button"
+                  className="orders-chat-btn"
+                  onClick={() => navigate(`/chat/${selectedOrder?.id}`)}
+                  disabled={normalizeStatus(selectedOrder?.status) !== "accepted"}
+                  title={
+                    normalizeStatus(selectedOrder?.status) === "accepted"
+                      ? "Open chat with your driver"
+                      : "Chat becomes available after your order is accepted"
+                  }
+                >
+                  Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
