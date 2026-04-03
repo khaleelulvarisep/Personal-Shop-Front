@@ -23,51 +23,6 @@ const GroceryRequestForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // const handleGetLocation = () => {
-  //   if (!navigator.geolocation) {
-  //     alert("Geolocation is not supported by your browser.");
-  //     return;
-  //   }
-
-  //   setIsLocating(true);
-
-  //   navigator.geolocation.getCurrentPosition(
-  //     async (position) => {
-  //       const { latitude, longitude } = position.coords;
-
-  //       try {
-  //         const response = await fetch(
-  //           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-  //         );
-
-  //         const data = await response.json();
-
-  //         setFormData((prev) => ({
-  //           ...prev,
-  //           latitude,
-  //           longitude,
-  //           address_text: data.display_name || "Address unavailable for this location.",
-  //         }));
-  //       } catch (error) {
-  //         console.error("Error fetching address:", error);
-  //         setFormData((prev) => ({
-  //           ...prev,
-  //           latitude,
-  //           longitude,
-  //           address_text: "Address unavailable for this location.",
-  //         }));
-  //       } finally {
-  //         setIsLocating(false);
-  //       }
-  //     },
-  //     (error) => {
-  //       alert("Unable to retrieve location.");
-  //       console.error(error);
-  //       setIsLocating(false);
-  //     }
-  //   );
-  // };
-
 
 
   const handleGetLocation = () => {
@@ -196,7 +151,7 @@ const GroceryRequestForm = () => {
 
       // await axios.post("/orders/create/", payload);
 
-      await API.post("/orders/create/", payload);
+      await API.post("/orders/orders/", payload);
 
       
       alert("Request Dispatched Successfully");

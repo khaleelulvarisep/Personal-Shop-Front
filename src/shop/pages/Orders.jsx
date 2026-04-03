@@ -11,16 +11,18 @@ const normalizeStatus = (status) =>
 
 const statusBadgeClass = (status) => {
   const normalized = normalizeStatus(status);
-  if (normalized === "accepted") return "processing";
-  if (normalized === "in-transit" || normalized === "out-for-delivery") {
-    return "processing";
-  }
-  if (normalized === "canceled") return "cancelled";
+  if (normalized === "canceled" || normalized === "cancelled") return "cancelled";
+  if (normalized === "shoping") return "shopping";
   if (
     normalized === "pending" ||
+    normalized === "accepted" ||
+    normalized === "shopping" ||
     normalized === "processing" ||
-    normalized === "delivered" ||
-    normalized === "cancelled"
+    normalized === "on-the-way" ||
+    normalized === "in-transit" ||
+    normalized === "out-for-delivery" ||
+    normalized === "arrived" ||
+    normalized === "delivered"
   ) {
     return normalized;
   }
@@ -50,6 +52,15 @@ const formatMoney = (value) => {
   }
 };
 
+const getOrderOtp = (order) =>
+  order?.otp ??
+  order?.delivery_otp ??
+  order?.order_otp ??
+  order?.deliveryOtp ??
+  order?.deliveryOTP ??
+  order?.deliveryOtpCode ??
+  null;
+
 const MyOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -57,6 +68,7 @@ const MyOrders = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [otpCopied, setOtpCopied] = useState(false);
 
   const fetchOrders = async ({ silent = false } = {}) => {
     try {
@@ -64,8 +76,8 @@ const MyOrders = () => {
       if (!silent) setLoading(true);
       setRefreshing(silent);
 
-      const response = await API.get("/orders/my-orders/");
-      setOrders(response?.data?.data ?? []);
+      const response = await API.get("/orders/orders/?role=customer");
+      setOrders(response?.data ?? []);
     } catch (err) {
       console.error("Error fetching orders", err);
       setError("Could not load your orders. Please try again.");
@@ -81,6 +93,7 @@ const MyOrders = () => {
 
   useEffect(() => {
     if (!selectedOrder) return;
+    setOtpCopied(false);
     const onKeyDown = (event) => {
       if (event.key === "Escape") setSelectedOrder(null);
     };
@@ -102,6 +115,30 @@ const MyOrders = () => {
     return [...safeOrders].sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
   }, [orders]);
 
+  const copyOtp = async (otp) => {
+    const value = String(otp ?? "").trim();
+    if (!value) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const temp = document.createElement("textarea");
+        temp.value = value;
+        temp.setAttribute("readonly", "");
+        temp.style.position = "fixed";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+      }
+      setOtpCopied(true);
+      window.setTimeout(() => setOtpCopied(false), 1800);
+    } catch (err) {
+      console.error("Failed to copy OTP", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="orders-loading" role="status" aria-live="polite">
@@ -114,6 +151,9 @@ const MyOrders = () => {
       </div>
     );
   }
+
+  const selectedStatus = normalizeStatus(selectedOrder?.status);
+  const selectedOtp = getOrderOtp(selectedOrder);
 
   return (
     <div className="orders-page shop-page">
@@ -166,7 +206,8 @@ const MyOrders = () => {
           <div className="orders-grid" role="list">
             {displayOrders.map((order) => {
               const trackingAvailable = Boolean(order?.delivery_partner);
-              const chatAvailable = normalizeStatus(order?.status) === "accepted";
+              const isPending = normalizeStatus(order?.status) === "pending";
+              const chatAvailable = normalizeStatus(order?.status) !== "pending";
               const createdAt = order?.created_at
                 ? new Date(order.created_at).toLocaleString()
                 : "-";
@@ -237,41 +278,45 @@ const MyOrders = () => {
                     </div>
 
                     <div className="orders-card-actions">
-                      <button
-                        type="button"
-                        className="orders-track-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          if (!trackingAvailable) return;
-                          navigate(`/track/${order.delivery_partner}`);
-                        }}
-                        disabled={!trackingAvailable}
-                        title={
-                          trackingAvailable
-                            ? "Track your delivery partner"
-                            : "Tracking becomes available after a driver is assigned"
-                        }
-                      >
-                        Track
-                      </button>
+                      {isPending ? null : (
+                        <>
+                          <button
+                            type="button"
+                            className="orders-track-btn"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (!trackingAvailable) return;
+                              navigate(`/track/${order.delivery_partner}`);
+                            }}
+                            disabled={!trackingAvailable}
+                            title={
+                              trackingAvailable
+                                ? "Track your delivery partner"
+                                : "Tracking becomes available after a driver is assigned"
+                            }
+                          >
+                            Track
+                          </button>
 
-                      <button
-                        type="button"
-                        className="orders-chat-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          if (!chatAvailable) return;
-                          navigate(`/chat/${order?.id}`);
-                        }}
-                        disabled={!chatAvailable}
-                        title={
-                          chatAvailable
-                            ? "Open chat with your driver"
-                            : "Chat becomes available after your order is accepted"
-                        }
-                      >
-                        Chat
-                      </button>
+                          <button
+                            type="button"
+                            className="orders-chat-btn"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (!chatAvailable) return;
+                              navigate(`/chat/${order?.id}`);
+                            }}
+                            disabled={!chatAvailable}
+                            title={
+                              chatAvailable
+                                ? "Open chat"
+                                : "Chat becomes available after your order is accepted"
+                            }
+                          >
+                            Chat
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -383,37 +428,67 @@ const MyOrders = () => {
                 </div>
               </div>
 
+              {selectedStatus === "arrived" ? (
+                <div className="orders-otp-card" role="region" aria-label="Delivery OTP">
+                  <div>
+                    <div className="orders-otp-title">Delivery OTP</div>
+                    <div className="orders-otp-subtitle">
+                      Share this code with your delivery partner to confirm delivery.
+                    </div>
+                  </div>
+
+                  {selectedOtp ? (
+                    <div className="orders-otp-actions">
+                      <div className="orders-otp-code" aria-label="OTP code">
+                        {String(selectedOtp)}
+                      </div>
+                      <button
+                        type="button"
+                        className="orders-otp-copy"
+                        onClick={() => copyOtp(selectedOtp)}
+                        title="Copy OTP"
+                      >
+                        {otpCopied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="orders-otp-missing" role="status" aria-live="polite">
+                      OTP will appear here once it is generated.
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               <div className="orders-modal-actions">
-                <button
-                  type="button"
-                  className="orders-track-btn"
-                  onClick={() =>
-                    selectedOrder?.delivery_partner
-                      ? navigate(`/track/${selectedOrder.delivery_partner}`)
-                      : null
-                  }
-                  disabled={!selectedOrder?.delivery_partner}
-                  title={
-                    selectedOrder?.delivery_partner
-                      ? "Track your delivery partner"
-                      : "Tracking becomes available after a driver is assigned"
-                  }
-                >
-                  Track
-                </button>
-                <button
-                  type="button"
-                  className="orders-chat-btn"
-                  onClick={() => navigate(`/chat/${selectedOrder?.id}`)}
-                  disabled={normalizeStatus(selectedOrder?.status) !== "accepted"}
-                  title={
-                    normalizeStatus(selectedOrder?.status) === "accepted"
-                      ? "Open chat with your driver"
-                      : "Chat becomes available after your order is accepted"
-                  }
-                >
-                  Chat
-                </button>
+                {selectedStatus === "pending" ? null : (
+                  <>
+                    <button
+                      type="button"
+                      className="orders-track-btn"
+                      onClick={() =>
+                        selectedOrder?.delivery_partner
+                          ? navigate(`/track/${selectedOrder.delivery_partner}`)
+                          : null
+                      }
+                      disabled={!selectedOrder?.delivery_partner}
+                      title={
+                        selectedOrder?.delivery_partner
+                          ? "Track your delivery partner"
+                          : "Tracking becomes available after a driver is assigned"
+                      }
+                    >
+                      Track
+                    </button>
+                    <button
+                      type="button"
+                      className="orders-chat-btn"
+                      onClick={() => navigate(`/chat/${selectedOrder?.id}`)}
+                      title="Open chat"
+                    >
+                      Chat
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
