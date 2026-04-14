@@ -7,7 +7,7 @@ const normalizeStatus = (status) =>
   String(status ?? "unknown")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, "-");
+    .replace(/[\s_]+/g, "-");
 
 const statusBadgeClass = (status) => {
   const normalized = normalizeStatus(status);
@@ -16,7 +16,7 @@ const statusBadgeClass = (status) => {
   if (
     normalized === "pending" ||
     normalized === "accepted" ||
-    normalized === "shopping" ||
+    normalized === "shopping" ||     
     normalized === "processing" ||
     normalized === "on-the-way" ||
     normalized === "in-transit" ||
@@ -38,19 +38,21 @@ const statusLabel = (status) => {
   return normalized.replace(/-/g, " ");
 };
 
-const formatMoney = (value) => {
+const formatINR = (value, { maximumFractionDigits = 0 } = {}) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "-";
   try {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      maximumFractionDigits: 0,
+      maximumFractionDigits,
     }).format(numeric);
   } catch {
-    return `\u20B9${numeric.toFixed(0)}`;
+    return `\u20B9${numeric.toFixed(maximumFractionDigits)}`;
   }
 };
+
+const formatMoney = (value) => formatINR(value, { maximumFractionDigits: 0 });
 
 const getOrderOtp = (order) =>
   order?.otp ??
@@ -139,6 +141,55 @@ const MyOrders = () => {
     }
   };
 
+  const selectedStatus = normalizeStatus(selectedOrder?.status);
+  const selectedPaymentStatus = normalizeStatus(
+    selectedOrder?.payment_status ?? selectedOrder?.paymentStatus
+  );
+  const selectedOtp = getOrderOtp(selectedOrder);
+
+  const selectedOrderItems = useMemo(
+    () => (Array.isArray(selectedOrder?.items) ? selectedOrder.items : []),
+    [selectedOrder]
+  );
+
+  const canShowPrices = ["shopping", "on-the-way", "arrived", "delivered"].includes(
+    selectedStatus
+  );
+
+  const totalFromItems = useMemo(() => {
+    if (!selectedOrderItems.length) return null;
+    let total = 0;
+    for (const item of selectedOrderItems) {
+      const price = Number(item?.price);
+      if (!Number.isFinite(price)) return null;
+      const quantity = Number(item?.quantity ?? 1);
+      total += price * (Number.isFinite(quantity) ? quantity : 1);
+    }
+    return total;
+  }, [selectedOrderItems]);
+
+  const platformFeeValue =
+    selectedOrder?.platform_fee ?? selectedOrder?.platformFee ?? null;
+  const deliveryFeeValue =
+    selectedOrder?.delivery_fee ?? selectedOrder?.deliveryFee ?? null;
+
+  const numericPlatformFee = Number(platformFeeValue);
+  const numericDeliveryFee = Number(deliveryFeeValue);
+  const hasPlatformFee = Number.isFinite(numericPlatformFee);
+  const hasDeliveryFee = Number.isFinite(numericDeliveryFee);
+
+  const totalFromItemsWithFees =
+    totalFromItems == null
+      ? null
+      : hasPlatformFee && hasDeliveryFee
+        ? totalFromItems + numericPlatformFee + numericDeliveryFee
+        : totalFromItems;
+
+  const totalAmountValue =
+    selectedOrder?.total_amount ??
+    selectedOrder?.totalAmount ??
+    totalFromItemsWithFees;
+
   if (loading) {
     return (
       <div className="orders-loading" role="status" aria-live="polite">
@@ -151,9 +202,6 @@ const MyOrders = () => {
       </div>
     );
   }
-
-  const selectedStatus = normalizeStatus(selectedOrder?.status);
-  const selectedOtp = getOrderOtp(selectedOrder);
 
   return (
     <div className="orders-page shop-page">
@@ -380,13 +428,62 @@ const MyOrders = () => {
                   <div className="orders-modal-row">
                     <div className="orders-modal-label">Items</div>
                     <div className="orders-modal-value">
-                      {selectedOrder?.items_text ?? "-"}
+                      {selectedOrderItems.length ? (
+                        <div>
+                          {selectedOrderItems.map((item, index) => {
+                            const key = item?.id ?? `${item?.name ?? "item"}-${index}`;
+                            const quantity = Number(item?.quantity ?? 1);
+                            const safeQty = Number.isFinite(quantity) ? quantity : 1;
+                            const numericPrice = Number(item?.price);
+                            const priceLabel =
+                              canShowPrices && Number.isFinite(numericPrice)
+                                ? formatINR(numericPrice, { maximumFractionDigits: 2 })
+                                : "Pending";
+                            return (
+                              <div key={key}>
+                                {item?.name ?? "Item"}{" "}
+                                <span>
+                                  ×{safeQty} - {priceLabel}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        selectedOrder?.items_text ?? "-"
+                      )}
                     </div>
                   </div>
                   <div className="orders-modal-row">
                     <div className="orders-modal-label">Budget</div>
                     <div className="orders-modal-value">
                       {formatMoney(selectedOrder?.budget)}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Platform fee</div>
+                    <div className="orders-modal-value">
+                      {hasPlatformFee
+                        ? formatINR(numericPlatformFee, { maximumFractionDigits: 2 })
+                        : "-"}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Delivery fee</div>
+                    <div className="orders-modal-value">
+                      {hasDeliveryFee
+                        ? formatINR(numericDeliveryFee, { maximumFractionDigits: 2 })
+                        : "-"}
+                    </div>
+                  </div>
+                  <div className="orders-modal-row">
+                    <div className="orders-modal-label">Total</div>
+                    <div className="orders-modal-value">
+                      {canShowPrices
+                        ? totalAmountValue == null
+                          ? "Pending"
+                          : formatINR(totalAmountValue, { maximumFractionDigits: 2 })
+                        : "Pending"}
                     </div>
                   </div>
                   <div className="orders-modal-row">
@@ -428,7 +525,7 @@ const MyOrders = () => {
                 </div>
               </div>
 
-              {selectedStatus === "arrived" ? (
+              {selectedStatus === "arrived" && selectedPaymentStatus === "paid" ? (
                 <div className="orders-otp-card" role="region" aria-label="Delivery OTP">
                   <div>
                     <div className="orders-otp-title">Delivery OTP</div>

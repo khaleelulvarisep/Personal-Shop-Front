@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import API from "../../api/axios";
+import { generateItemsForDish } from "../services/aiService";
 
 import "./GroceryRequestForm.css";
 
@@ -18,11 +19,53 @@ const GroceryRequestForm = () => {
   const [isLocating, setIsLocating] = useState(false);
   const [addressMode, setAddressMode] = useState("new");
 
+  const [dish, setDish] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleGenerateItems = async () => {
+    const trimmedDish = dish.trim();
+
+    if (!trimmedDish) {
+      setGenerateError("Dish is required to generate items.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerateError("");
+
+    try {
+      const data = await generateItemsForDish(trimmedDish);
+
+      const rawItemsText =
+        data?.items_text ?? data?.itemsText ?? data?.items ?? "";
+
+      const normalizedItemsText = Array.isArray(rawItemsText)
+        ? rawItemsText.join("\n")
+        : String(rawItemsText ?? "");
+
+      if (!normalizedItemsText.trim()) {
+        setGenerateError("AI service returned an empty list. Try another dish.");
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, items_text: normalizedItemsText }));
+    } catch (err) {
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Failed to generate items. Please try again.";
+      setGenerateError(String(message));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
 
   const handleGetLocation = () => {
@@ -151,7 +194,7 @@ const GroceryRequestForm = () => {
 
       // await axios.post("/orders/create/", payload);
 
-      await API.post("/orders/orders/", payload);
+      await API.post("orders/orders/", payload);
 
       
       alert("Request Dispatched Successfully");
@@ -184,6 +227,36 @@ const GroceryRequestForm = () => {
         </header>
 
         <form onSubmit={handleSubmit} className="professional-form">
+          <div className="input-block">
+            <label>Generate From Dish (AI)</label>
+            <div className="ai-generate-row">
+              <input
+                type="text"
+                value={dish}
+                onChange={(e) => setDish(e.target.value)}
+                placeholder="e.g., Chicken biryani"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="ai-generate-btn"
+                onClick={handleGenerateItems}
+                disabled={isGenerating || !dish.trim()}
+              >
+                {isGenerating ? "Generating..." : "Generate"}
+              </button>
+            </div>
+            {generateError ? (
+              <div className="ai-generate-error" role="alert">
+                {generateError}
+              </div>
+            ) : (
+              <div className="ai-generate-hint">
+                Generates a grocery list and fills the manifest details.
+              </div>
+            )}
+          </div>
+
           <div className="input-block">
             <label>Manifest Details</label>
             <textarea

@@ -102,6 +102,52 @@ textarea {
   resize: none;
 }
 
+.ai-generate-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.ai-generate-btn {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #c7dbff;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.08s,
+    box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.ai-generate-btn:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+}
+
+.ai-generate-btn:active {
+  transform: translateY(1px);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ai-generate-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.ai-generate-error {
+  font-size: 0.82rem;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 /* ACTION BUTTON */
 .form-footer {
   margin-top: 8px;
@@ -246,6 +292,10 @@ textarea {
 @media (max-width: 540px) {
   .logistics-grid {
     grid-template-columns: 1fr; /* Stacks vertically on small mobile */
+  }
+
+  .ai-generate-row {
+    grid-template-columns: 1fr;
   }
 
   .address-mode-tabs {
