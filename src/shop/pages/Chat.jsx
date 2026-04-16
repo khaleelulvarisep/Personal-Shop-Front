@@ -203,7 +203,7 @@ const Chat = ({ orderId, userId }) => {
 
     fetchMessages(); // 🔥 LOAD OLD MESSAGES
 
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/chat/${orderId}/`);
+    const ws = new WebSocket(`wss://shopper.fitzs.online/ws/chat/${orderId}/`);
     socketRef.current = ws;
 
     ws.onopen = () => setConnectionState("connected");
