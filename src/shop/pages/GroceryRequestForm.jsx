@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import API from "../../api/axios";
 import { generateItemsForDish } from "../services/aiService";
+import AiEstimatePrices from "../components/AiEstimatePrices";
 
 import "./GroceryRequestForm.css";
 
@@ -267,6 +268,8 @@ const GroceryRequestForm = () => {
               required
             />
           </div>
+
+          <AiEstimatePrices text={formData.items_text} />
 
           <div className="logistics-grid">
             <div className="input-block">
