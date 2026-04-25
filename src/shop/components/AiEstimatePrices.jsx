@@ -38,7 +38,11 @@ const normalizeSourceText = (sourceText) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export default function AiEstimatePrices({ text, endpoint = DEFAULT_ENDPOINT }) {
+export default function AiEstimatePrices({
+  text,
+  endpoint = DEFAULT_ENDPOINT,
+  showMatchedItems = false,
+}) {
   const normalized = useMemo(() => normalizeSourceText(text), [text]);
   const debouncedText = useDebouncedValue(normalized, 500);
 
@@ -148,18 +152,27 @@ export default function AiEstimatePrices({ text, endpoint = DEFAULT_ENDPOINT }) 
         <div className="ai-estimate__results">
           <div className="ai-estimate__resultsHeader">
             <div className="ai-estimate__resultsTitle">Estimated Prices</div>
-            <div className="ai-estimate__total">
-              Total: <span className="ai-estimate__totalValue">{formatINR(result?.estimated_total)}</span>
-            </div>
           </div>
 
           <div className="ai-estimate__grid">
-            {(Array.isArray(result?.items) ? result.items : []).map((row, idx) => (
+            {(Array.isArray(result?.results) ? result.results : Array.isArray(result?.items) ? result.items : []).map(
+              (row, idx) => (
               <div className="ai-estimate__card" key={`${row?.item || "item"}-${idx}`}>
                 <div className="ai-estimate__cardLabel">{row?.item || "Item"}</div>
                 <div className="ai-estimate__cardValue">{formatINR(row?.estimated_price)}</div>
+                {showMatchedItems && Array.isArray(row?.matched_items) && row.matched_items.length ? (
+                  <div className="ai-estimate__cardMeta">
+                    {[...new Set(row.matched_items)].slice(0, 4).join(", ")}
+                    {row.matched_items.length > 4 ? "…" : ""}
+                  </div>
+                ) : null}
               </div>
-            ))}
+              )
+            )}
+          </div>
+
+          <div className="ai-estimate__total ai-estimate__total--bottom">
+            Total: <span className="ai-estimate__totalValue">{formatINR(result?.estimated_total)}</span>
           </div>
         </div>
       ) : null}

@@ -153,6 +153,11 @@
   color: rgba(15, 23, 42, 0.75);
 }
 
+.ai-estimate__total--bottom {
+  margin-top: 12px;
+  text-align: right;
+}
+
 .ai-estimate__totalValue {
   font-weight: 800;
   color: rgba(15, 23, 42, 1);
@@ -182,4 +187,10 @@
   font-size: 14px;
   font-weight: 800;
   color: #0f172a;
+}
+
+.ai-estimate__cardMeta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.65);
 }
