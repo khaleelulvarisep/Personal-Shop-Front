@@ -3,8 +3,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  // baseURL: "https://shopper.fitzs.online/api/",
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: "https://shopper.fitzs.online/api/",
+  // baseURL: "http://127.0.0.1:8000/api/",
 });
 
 // REQUEST INTERCEPTOR
@@ -37,8 +37,8 @@ API.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          // "https://shopper.fitzs.online/api/auth/token/refresh/",
-          "http://127.0.0.1:8000/api/auth/token/refresh/",
+          "https://shopper.fitzs.online/api/auth/token/refresh/",
+          // "http://127.0.0.1:8000/api/auth/token/refresh/",
           { refresh: refreshToken }
         );
 
